@@ -1,0 +1,19 @@
+[package]
+name = "rasteroids"
+version = "0.1.0"
+authors = ["jarred barber <jpb5082@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "*"
+specs-derive = "0.4.0"
+
+[dependencies.quicksilver]
+version = "0.3.8"
+default-features = false
+features = ["fonts", "saving"]
+
+[dependencies.specs]
+version = "0.14.3"
+default-features = false
+# features = ["wasm-bindgen"] 
