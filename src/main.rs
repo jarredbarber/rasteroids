@@ -2,7 +2,6 @@
 extern crate quicksilver;
 extern crate rand;
 extern crate specs;
-extern crate vector2d;
 #[macro_use]
 extern crate specs_derive;
 
@@ -59,15 +58,15 @@ struct Polygon {
 impl Polygon {
     fn new(x: Vec<f32>, y: Vec<f32>) -> Polygon {
         // find the polygon's barycenter
-        let mut A: f32 = 0.0;
+        let mut area: f32 = 0.0;
         for k in 0..(x.len() - 1) {
-            A += 0.5 * (x[k] * y[k + 1] - x[k + 1] * y[k]);
+            area += 0.5 * (x[k] * y[k + 1] - x[k + 1] * y[k]);
         }
 
         let mut cx: f32 = 0.0;
         let mut cy: f32 = 0.0;
 
-        let scale: f32 = 6.0 * A;
+        let scale: f32 = 6.0 * area;
 
         for k in 0..(x.len() - 1) {
             let b = (x[k] * y[k + 1] - x[k + 1] * y[k]) / scale;
@@ -109,7 +108,7 @@ impl Polygon {
         for k in 0..self.len() {
             a += 0.5 * (self.pts[k].x * self.pts[k + 1].y - self.pts[k + 1].x * self.pts[k].y);
         }
-        a
+        a.abs()
     }
 
     fn scale(&mut self, scale: f32) {
@@ -140,18 +139,25 @@ impl<'a> specs::System<'a> for PhysicsUpdate {
         for state in (&mut state).join() {
             let vs = state.v * dt;
             state.x += vs; // state.v;
-
-            if state.x.x < 0.0 {
-                state.x.x += 100.0;
-            }
-            if state.x.x > 100.0 {
-                state.x.x = 100.0 - state.x.x;
-            }
+            let mut flipx = false;
             if state.x.y < 0.0 {
                 state.x.y += 100.0;
+                flipx = true;
             }
             if state.x.y > 100.0 {
                 state.x.y = 100.0 - state.x.y;
+                flipx = true;
+            }
+            if state.x.x < 0.0 {
+                state.x.x += 100.0;
+                state.x.y = 100.0 - state.x.y;
+            }
+            if state.x.x > 100.0 {
+                state.x.x = 100.0 - state.x.x;
+                state.x.y = 100.0 - state.x.y;
+            }
+            if flipx {
+                state.x.x = 100.0 - state.x.x;
             }
             state.phi += dt * state.omega;
         }
@@ -173,8 +179,8 @@ impl<'a> specs::System<'a> for BulletAsteroidCollision {
     ) {
         //TODO: refactor this. this is ridiculous.
         use specs::Join;
-        for (ent_bullet, rb_bullet, bullet) in (&entities, &rb_read, &bul_read).join() {
-            for (ent_ast, rb_ast, ast_poly, ast) in
+        for (ent_bullet, rb_bullet, _bullet) in (&entities, &rb_read, &bul_read).join() {
+            for (ent_ast, rb_ast, ast_poly, _ast) in
                 (&entities, &rb_read, &poly_read, &ast_read).join()
             {
                 // For each line segment in the polygon,
@@ -189,7 +195,7 @@ impl<'a> specs::System<'a> for BulletAsteroidCollision {
 
                     let d = p.distance(rb_bullet.x);
 
-                    if (d < 0.5 && t > 0.0 && t < 1.0) {
+                    if d < 0.5 && t > 0.0 && t < 1.0 {
                         // Call this a collision
                         entities.delete(ent_bullet);
                         entities.delete(ent_ast);
@@ -253,11 +259,12 @@ impl<'a> specs::System<'a> for BulletAsteroidCollision {
                             );
                             updater.insert(ast2, rb2);
                             updater.insert(ast2, poly2);
-                        }
-                    }
-                }
-            }
-        }
+                            break;
+                        } // spawn new asteroids?
+                    } // collision?
+                } // for each line segment
+            } // for each asteroid
+        } // for each bullet
     }
 }
 /*
@@ -349,7 +356,7 @@ impl GameSession<'static, 'static> {
             let mut pos_storage = self.world.write_storage::<RigidBody>();
             let player_storage = self.world.read_storage::<Player>();
 
-            for (rb, ply) in (&mut pos_storage, &player_storage).join() {
+            for (rb, _ply) in (&mut pos_storage, &player_storage).join() {
                 rb.v.x += rb.phi.cos() * dv;
                 rb.v.y += rb.phi.sin() * dv;
                 rb.phi += dphi;
@@ -469,7 +476,6 @@ impl lifecycle::State for GameSession<'static, 'static> {
         // Need to manually run the render system here
         let pos_storage = self.world.read_storage::<RigidBody>();
         let rect_storage = self.world.read_storage::<Rectangle>();
-        let play_storage = self.world.read_storage::<Player>();
         let color_storage = self.world.read_storage::<Color>();
         let poly_storage = self.world.read_storage::<Polygon>();
 
