@@ -6,7 +6,7 @@ Teaching myself Rust by writing an asteroids game.
 - [x] Player movement
 - [x] Bullets
 - [x] Asteroid objects
-- [ ] Asteroid polygons - randomly generated
+- [x] Asteroid polygons - randomly generated
 - [ ] Collision detection
 - [ ] Asteroid breakup on hit
 - [ ] Scoring

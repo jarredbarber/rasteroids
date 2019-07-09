@@ -150,22 +150,32 @@ impl GameSession<'static, 'static> {
 
     fn spawn_asteroid(&mut self) {
         use crate::rand::Rng;
-
+        let two_pi:f32 = 2.0*std::f32::consts::PI;
         let rb = RigidBody {
             x: 100.0*self.rng.gen::<f32>(),
             y: 100.0*self.rng.gen::<f32>(),
-            vx: 10.0*self.rng.gen::<f32>(),
-            vy: 10.0*self.rng.gen::<f32>(),
-            phi: 0.0,
+            vx: 10.0*self.rng.gen::<f32>() - 5.0,
+            vy: 10.0*self.rng.gen::<f32>() - 5.0,
+            phi: two_pi*self.rng.gen::<f32>(),
             omega: 2.0*self.rng.gen::<f32>() - 1.0,
         };
 
-        // TODO: Generate a random polygon
+        let mut x = Vec::<f32>::new();
+        let mut y = Vec::<f32>::new();
+        
+        let n:usize = self.rng.gen_range(3usize, 12usize);
+
+        for k in 0..n {
+            let phi = (k as f32)*two_pi / ((n+1) as f32);
+            let r = 1.0 + 14.0*self.rng.gen::<f32>();
+            x.push(r*phi.cos());
+            y.push(r*phi.sin());
+        }
 
         use specs::Builder;
         self.world.create_entity()
             .with(rb)
-            .with(Rectangle {h: 25.0, w: 25.0})
+            .with(Polygon::new(x, y))
             .with(Color {color: graphics::Color::WHITE})
             .build();
     }
@@ -304,18 +314,18 @@ impl lifecycle::State for GameSession<'static, 'static> {
         }
 
         for (color, rb, poly) in (&color_storage, &pos_storage, &poly_storage).join() {
-            let N:usize = poly.x.len();
+            let n:usize = poly.x.len();
             let c = rb.phi.cos();
             let s = rb.phi.sin();
-            for k in 0..N {
+            for k in 0..n {
                 let v0 = quicksilver::geom::Vector::new(rb.x + c*poly.x[k] - s*poly.y[k], 
                                                         rb.y + s*poly.x[k] + c*poly.y[k]);
                 let v1 = quicksilver::geom::Vector::new(rb.x 
-                                                        + c*poly.x[(k+1).wrapping_rem(N)]
-                                                        - s*poly.y[(k+1).wrapping_rem(N)],
+                                                        + c*poly.x[(k+1).wrapping_rem(n)]
+                                                        - s*poly.y[(k+1).wrapping_rem(n)],
                                                         rb.y 
-                                                        + c*poly.y[(k+1).wrapping_rem(N)]
-                                                        + s*poly.x[(k+1).wrapping_rem(N)]);
+                                                        + c*poly.y[(k+1).wrapping_rem(n)]
+                                                        + s*poly.x[(k+1).wrapping_rem(n)]);
                 window.draw(&geom::Line::new(v0, v1).with_thickness(0.1),
                             graphics::Background::Col(color.color));
             }
