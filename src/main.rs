@@ -2,12 +2,10 @@
 extern crate quicksilver;
 extern crate rand;
 extern crate specs;
+#[macro_use]
+extern crate specs_derive;
 
-use quicksilver::prelude::*;
 use quicksilver::{geom, graphics, lifecycle};
-
-//type V2 = vector2d::Vector2D<f32>;
-type V2 = quicksilver::geom::Vector;
 
 mod components;
 use components::*;
@@ -69,10 +67,7 @@ impl GameSession<'static, 'static> {
         let two_pi: f32 = 2.0 * std::f32::consts::PI;
         let rb = RigidBody {
             x: V2::new(100.0 * rng.gen::<f32>(), 100.0 * rng.gen::<f32>()),
-            v: V2::new(
-                10.0 * rng.gen::<f32>() - 5.0,
-                10.0 * rng.gen::<f32>() - 5.0,
-            ),
+            v: V2::new(10.0 * rng.gen::<f32>() - 5.0, 10.0 * rng.gen::<f32>() - 5.0),
             phi: two_pi * rng.gen::<f32>(),
             omega: 2.0 * rng.gen::<f32>() - 1.0,
         };
@@ -189,6 +184,7 @@ impl lifecycle::State for GameSession<'static, 'static> {
                 self.spawn_player();
             }
             GameState::Playing => {
+                use quicksilver::prelude::{ButtonState, Key};
                 // Process inputs
                 if window.keyboard()[Key::Left].is_down() {
                     self.move_player(Command::RotLeft);
@@ -236,8 +232,8 @@ impl lifecycle::State for GameSession<'static, 'static> {
 
         for (color, rb, poly) in (&color_storage, &pos_storage, &poly_storage).join() {
             for k in 0..poly.len() {
-                let v0 = physics::euclidean(&poly.pts[k], rb.phi, rb.x);
-                let v1 = physics::euclidean(&poly.pts[k + 1], rb.phi, rb.x);
+                let v0 = physics::euclidean(&poly.pts[k], rb.phi, &rb.x);
+                let v1 = physics::euclidean(&poly.pts[k + 1], rb.phi, &rb.x);
                 window.draw(
                     &geom::Line::new(v0, v1).with_thickness(0.1),
                     graphics::Background::Col(color.color),

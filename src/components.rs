@@ -1,51 +1,47 @@
-extern crate quicksilver;
-extern crate rand;
-extern crate specs;
+use quicksilver::graphics;
+use specs::{Component, DenseVecStorage};
 
-use quicksilver::prelude::*;
-use quicksilver::{geom, graphics, lifecycle};
-
-//type V2 = vector2d::Vector2D<f32>;
-type V2 = quicksilver::geom::Vector;
-
-#[macro_use]
-extern crate specs_derive;
-use specs::Component;
+pub type V2 = quicksilver::geom::Vector;
 
 #[derive(Debug, Component)]
-struct Player {
-    score: u32,
-    health: u32,
+pub struct Player {
+    pub score: u32,
+    pub health: u32,
     // last_bullet: u32,
 }
 
 #[derive(Debug, Component)]
-struct Asteroid;
+pub struct Asteroid;
 
 #[derive(Debug, Component)]
-struct Bullet;
+pub struct Bullet;
 
 #[derive(Debug, Copy, Clone, Component)]
-struct RigidBody {
-    x: V2,
-    v: V2,
-    phi: f32,
-    omega: f32,
+pub struct RigidBody {
+    pub x: V2,
+    pub v: V2,
+    pub phi: f32,
+    pub omega: f32,
 }
 
 #[derive(Debug, Component)]
-struct Rectangle {
-    w: f32,
-    h: f32,
+pub struct Rectangle {
+    pub w: f32,
+    pub h: f32,
 }
 
 #[derive(Debug, Component)]
-struct Polygon {
-    pts: Vec<V2>,
+pub struct Color {
+    pub color: graphics::Color,
+}
+
+#[derive(Debug, Component)]
+pub struct Polygon {
+    pub pts: Vec<V2>,
 }
 
 impl Polygon {
-    fn new(x: Vec<f32>, y: Vec<f32>) -> Polygon {
+    pub fn new(x: Vec<f32>, y: Vec<f32>) -> Polygon {
         // find the polygon's barycenter
         let mut area: f32 = 0.0;
         for k in 0..(x.len() - 1) {
@@ -71,7 +67,7 @@ impl Polygon {
         Polygon { pts: p }
     }
 
-    fn random() -> Polygon {
+    pub fn random() -> Polygon {
         use crate::rand::Rng;
         let mut rng = rand::thread_rng();
         let mut x = Vec::<f32>::new();
@@ -88,11 +84,11 @@ impl Polygon {
         Polygon::new(x, y)
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.pts.len() - 1
     }
 
-    fn area(&self) -> f32 {
+    pub fn area(&self) -> f32 {
         let mut a: f32 = 0.0;
         for k in 0..self.len() {
             a += 0.5 * (self.pts[k].x * self.pts[k + 1].y - self.pts[k + 1].x * self.pts[k].y);
@@ -100,14 +96,9 @@ impl Polygon {
         a.abs()
     }
 
-    fn scale(&mut self, scale: f32) {
+    pub fn scale(&mut self, scale: f32) {
         for k in 0..(self.len() + 1) {
             self.pts[k] *= scale;
         }
     }
-}
-
-#[derive(Debug, Component)]
-struct Color {
-    color: graphics::Color,
 }

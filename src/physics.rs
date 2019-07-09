@@ -1,10 +1,10 @@
+use super::components::*;
+use quicksilver::graphics;
 
-pub fn rotate(v: &V2, phi: f32) -> V2 { let c = phi.cos();
-    let s = phi.sin();
-    V2::new(c * v.x - s * v.y, s * v.x + c * v.y)
-}
+// pub type V2 = quicksilver::geom::Vector;
 
-pub fn euclidean(v: &V2, phi: f32, dv: &V2) -> V2 { let c = phi.cos();
+pub fn euclidean(v: &V2, phi: f32, dv: &V2) -> V2 {
+    let c = phi.cos();
     let s = phi.sin();
     V2::new(dv.x + c * v.x - s * v.y, dv.y + s * v.x + c * v.y)
 }
@@ -12,7 +12,7 @@ pub fn euclidean(v: &V2, phi: f32, dv: &V2) -> V2 { let c = phi.cos();
 pub struct PhysicsUpdate;
 pub struct BulletAsteroidCollision;
 
-pub impl<'a> specs::System<'a> for PhysicsUpdate {
+impl<'a> specs::System<'a> for PhysicsUpdate {
     type SystemData = specs::WriteStorage<'a, RigidBody>;
     fn run(&mut self, mut state: Self::SystemData) {
         use specs::Join;
