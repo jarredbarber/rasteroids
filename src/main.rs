@@ -157,9 +157,10 @@ impl GameSession<'static, 'static> {
             vx: 10.0*self.rng.gen::<f32>(),
             vy: 10.0*self.rng.gen::<f32>(),
             phi: 0.0,
-            omega: 0.5 + 2.0*self.rng.gen::<f32>(),
+            omega: 2.0*self.rng.gen::<f32>() - 1.0,
         };
 
+        // TODO: Generate a random polygon
 
         use specs::Builder;
         self.world.create_entity()
