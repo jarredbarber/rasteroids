@@ -130,7 +130,6 @@ struct Color {
 
 struct PhysicsUpdate;
 struct BulletAsteroidCollision;
-struct Collision;
 
 impl<'a> specs::System<'a> for PhysicsUpdate {
     type SystemData = specs::WriteStorage<'a, RigidBody>;
@@ -196,18 +195,19 @@ impl<'a> specs::System<'a> for BulletAsteroidCollision {
                         entities.delete(ent_ast);
 
                         // Get area
-                        let mut A = ast_poly.area();
-                        if (A > 10.0) {
+                        let mut a = ast_poly.area();
+                        // kill small asteroids
+                        if a > 10.0 {
                             use crate::rand::Rng;
-                            A *= 0.95; // Decrease mass slightly
+                            a *= 0.95; // Decrease mass slightly
                             let mut rng = rand::thread_rng();
                             // Momentum
-                            let m = rb_ast.v * A + rb_bullet.v * 0.5;
+                            let m = rb_ast.v * a + rb_bullet.v * 0.5;
 
-                            // Make two asteroids
-                            // Area split
-                            let A1 = rng.gen::<f32>() * A;
-                            let A2 = A - A1;
+                            // Make two asteroids. We conserve "mass" (area),
+                            // momentum, and angular momentum
+                            let a1 = rng.gen::<f32>() * a;
+                            let a2 = a - a1;
 
                             // Random direction
                             let rb1 = RigidBody {
@@ -221,15 +221,15 @@ impl<'a> specs::System<'a> for BulletAsteroidCollision {
                             };
                             let rb2 = RigidBody {
                                 x: rb_ast.x,
-                                v: (m - rb1.v * A2) * (1.0 / A2),
+                                v: (m - rb1.v * a2) * (1.0 / a2),
                                 phi: rng.gen::<f32>(),
-                                omega: (A * rb_ast.omega - A1 * rb1.omega) / A2,
+                                omega: (a * rb_ast.omega - a1 * rb1.omega) / a2,
                             };
 
                             let mut poly1 = Polygon::random();
-                            poly1.scale(A1 / poly1.area());
+                            poly1.scale(a1 / poly1.area());
                             let mut poly2 = Polygon::random();
-                            poly2.scale(A2 / poly2.area());
+                            poly2.scale(a2 / poly2.area());
 
                             let ast1 = entities.create();
                             let ast2 = entities.create();
@@ -305,7 +305,7 @@ impl GameSession<'static, 'static> {
                 vec![1.5, 0.0, -1.5, 0.0],
             ))
             .with(Color {
-                color: graphics::Color::WHITE,
+                color: graphics::Color::BLUE,
             })
             .build();
     }
@@ -382,7 +382,8 @@ impl GameSession<'static, 'static> {
 
         match player_rb {
             Some(rb) => {
-                let vb: f32 = 5.0;
+                use rand::Rng;
+                let vb: f32 = 15.0;
                 let u = V2::new(vb * rb.phi.cos(), vb * rb.phi.sin());
                 self.world
                     .create_entity()
@@ -391,11 +392,11 @@ impl GameSession<'static, 'static> {
                         x: rb.x,
                         v: rb.v + u,
                         phi: rb.phi,
-                        omega: 120.0,
+                        omega: 6.0 * rand::thread_rng().gen::<f32>(),
                     })
                     .with(Rectangle { h: 0.50, w: 1.0 })
                     .with(Color {
-                        color: graphics::Color::WHITE,
+                        color: graphics::Color::RED,
                     })
                     .build();
             }
